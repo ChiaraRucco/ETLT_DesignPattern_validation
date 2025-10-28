@@ -1,0 +1,94 @@
+{
+  "orders": [
+    {
+      "rule": "column_exists",
+      "column": "order_id",
+      "description": "Order ID must exist",
+      "passed": true,
+      "success_count": 101666,
+      "total_count": 101666,
+      "success_rate": 100.0
+    },
+    {
+      "rule": "not_null",
+      "column": "order_id",
+      "description": "Order ID cannot be null",
+      "passed": "True",
+      "success_count": 101666,
+      "total_count": 101666,
+      "success_rate": 100.0
+    },
+    {
+      "rule": "unique",
+      "column": "order_id",
+      "description": "Order ID must be unique",
+      "passed": "False",
+      "success_count": 100000,
+      "total_count": 101666,
+      "success_rate": 98.36130072984085
+    },
+    {
+      "rule": "not_null",
+      "column": "customer_id",
+      "description": "Customer ID cannot be null",
+      "passed": "True",
+      "success_count": 101666,
+      "total_count": 101666,
+      "success_rate": 100.0
+    },
+    {
+      "rule": "not_null",
+      "column": "total_amount",
+      "description": "Total amount cannot be null",
+      "passed": "False",
+      "success_count": 99971,
+      "total_count": 101666,
+      "success_rate": 98.33277595262919
+    },
+    {
+      "rule": "between",
+      "column": "total_amount",
+      "description": "Total amount must be between 0 and 100,000",
+      "passed": "False",
+      "success_count": 98307,
+      "total_count": 101666,
+      "success_rate": 96.69604390848464
+    },
+    {
+      "rule": "in_set",
+      "column": "order_status",
+      "description": "Order status must be valid",
+      "passed": "True",
+      "success_count": 101666,
+      "total_count": 101666,
+      "success_rate": 100.0
+    }
+  ],
+  "lineitems": [
+    {
+      "rule": "between",
+      "column": "quantity",
+      "description": "Quantity must be between 1 and 100",
+      "passed": "True",
+      "success_count": 349631,
+      "total_count": 349631,
+      "success_rate": 100.0
+    },
+    {
+      "rule": "between",
+      "column": "discount",
+      "description": "Discount must be between 0 and 1",
+      "passed": "True",
+      "success_count": 349631,
+      "total_count": 349631,
+      "success_rate": 100.0
+    }
+  ],
+  "summary": {
+    "l1_rows": 101666,
+    "l2_rows": 96696,
+    "quality_rate": 95.11144335372691,
+    "orders_passed": false,
+    "lineitems_passed": true
+  }
+}
