@@ -4,17 +4,15 @@
 ## Overview
 
 This package validates ELTL++ with focus on:
-1. **Data Quality & Contracts** (using Great Expectations)
+1. **Data Quality & Contracts** (explicit, executable validation rules)
 2. **Time Travel & Versioning** (using Delta Lake)
 3. **Query Performance** (Raw L1 vs Semantic L2)
 4. **Cost Analysis** (Corrected with realistic storage pricing)
 
 **Prerequisites:**
-```bash
-pip install pandas pyarrow deltalake great-expectations faker sqlalchemy duckdb matplotlib seaborn
-```
+Use Python 3.11 and the exact package versions in `requirements.txt`.
 
-**Total Runtime:** ~15 minutes  
+**Reference runtime:** under one minute on the documented local environment.
 **Cost:** < $0 (runs locally with DuckDB + local Delta Lake)
 
 ---
@@ -30,8 +28,8 @@ eltl_validation/
 │   ├── 3_time_travel.py            # Versioning & time travel
 │   ├── 4_performance.py            # Query performance
 │   └── 5_cost_analysis.py          # Corrected cost model
-├── data/                            # Generated data
-├── results/                         # Experiment results
+├── data/                            # Generated at runtime (untracked)
+├── results/                         # Generated at runtime (untracked)
 └── requirements.txt
 ```
 
@@ -40,57 +38,30 @@ eltl_validation/
 ## Installation & Usage
 
 ```bash
-# 1. Create project directory
-mkdir eltl_validation
-cd eltl_validation
+# 1. Clone the versioned artifact
+git clone https://github.com/ChiaraRucco/ETLT_DesignPattern_validation.git
+cd ETLT_DesignPattern_validation
 
-# 2. Create directory structure
-mkdir -p experiments data results
-
-# 3. Install dependencies
+# 2. Install the pinned reference environment
 pip install -r requirements.txt
 
-# 4. Run complete validation
+# 3. Run the complete validation (no interactive input required)
 python run_all_experiments.py
 ```
 
 ---
 
-## Expected Output
+## Reproducibility safeguards
 
-```
-================================================================================
-ELTL++ COMPLETE VALIDATION SUITE
-================================================================================
-
-RUNNING: Data Generation
-  Generated 10,000 customers, 100,000 orders, 300,000 line items
-  ✓ Data Generation completed
-
-RUNNING: Data Quality & Contracts
-  ✓ 7/7 validations passed after cleaning
-  ✓ Data Quality & Contracts completed
-
-RUNNING: Time Travel & Versioning
-  ✓ 4 versions created
-  ✓ Time travel validated
-  ✓ Time Travel & Versioning completed
-
-RUNNING: Query Performance
-  Average Speedup: 3.2x
-  Performance Improvement: 68.8%
-  ✓ Query Performance completed
-
-RUNNING: Cost Analysis
-  Cost Reduction: $1,234.56/year (42.3%)
-  ✓ Cost Analysis completed
-
-================================================================================
-VALIDATION SUITE COMPLETE
-Completed: 5/5 experiments
-Results directory: ./results/
-================================================================================
-```
+The generator uses fixed random seeds and a fixed reference date. Each execution
+deletes and rebuilds `data/`, runs the performance test before versioning mutates
+the raw table, and writes the Python/platform metadata to `results/environment.json`.
+Generated data and results are excluded from version control so a rerun starts from
+a clean state.
+`VALIDATION_REPORT.txt` derives its performance and cost summary from the JSON
+result files; it does not contain hard-coded outcome claims. Query timing remains
+hardware-dependent and should be interpreted as a local benchmark, not a universal
+speedup guarantee.
 
 ---
 
@@ -108,10 +79,11 @@ results/
 
 ## What This Validates
 
-✅ **Data Quality:** Great Expectations contracts enforcing schema & rules  
-✅ **Time Travel:** Delta Lake versioning with full history  
-✅ **Performance:** 3-4x speedup with semantic layer  
-✅ **Cost:** 40-50% reduction with tiered storage  
-✅ **Reproducibility:** Complete end-to-end validation in ~15 minutes
+✅ **Data Quality:** executable schema and quality-rule validation
+✅ **Time Travel:** Delta Lake versioning with full history
+✅ **Performance:** a controlled Raw L1 versus Semantic L2 comparison
+✅ **Cost:** a transparent, parameterized tiered-storage model
+✅ **Reproducibility:** a pinned, end-to-end local validation workflow
 
-This package provides **complete, reproducible evidence** for your PhD thesis!
+This package provides a reproducible implementation artifact. The generated
+measurements are limited to its stated workload and local execution environment.

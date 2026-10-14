@@ -1,1 +1,3 @@
-etl1/
+data/
+results/
+*.log

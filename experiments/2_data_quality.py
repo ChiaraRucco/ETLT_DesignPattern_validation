@@ -151,7 +151,10 @@ def validate_data_quality(df, table_name, contract):
             'rule': rule['rule'],
             'column': rule.get('column'),
             'description': rule['description'],
-            'passed': passed,
+            # Pandas returns numpy.bool_, which must be converted before JSON
+            # serialization; otherwise `default=str` turns False into the truthy
+            # string "False" and corrupts summary counts.
+            'passed': bool(passed),
             'success_count': int(success_count),
             'total_count': int(total_count),
             'success_rate': float(success_count / total_count * 100) if total_count > 0 else 0
@@ -273,12 +276,14 @@ def main():
     with open("results/data_quality_results.json", 'w') as f:
         json.dump({
             'orders': orders_results,
+            'orders_clean': orders_results_clean if not orders_valid else orders_results,
             'lineitems': lineitems_results,
             'summary': {
                 'l1_rows': int(len(orders_dirty)),
                 'l2_rows': int(len(orders_clean)),
                 'quality_rate': float(len(orders_clean)/len(orders_dirty)*100),
                 'orders_passed': orders_valid,
+                'orders_clean_passed': orders_valid_clean if not orders_valid else orders_valid,
                 'lineitems_passed': lineitems_valid
             }
         }, f, indent=2, default=str)

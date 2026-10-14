@@ -7,6 +7,8 @@ import pandas as pd
 from deltalake import DeltaTable, write_deltalake
 from datetime import datetime
 import time
+import json
+from pathlib import Path
 
 def load_from_delta(path):
     """Load DataFrame from Delta Lake"""
@@ -181,6 +183,15 @@ def main():
     print(f"Growth: +{len(orders_v3) - len(orders_v0):,} orders")
     print("\n✓ Time travel and versioning capabilities validated")
     print("=" * 60)
+
+    Path("results").mkdir(exist_ok=True)
+    with open("results/time_travel_results.json", "w") as f:
+        json.dump({
+            "history_versions": len(history),
+            "initial_rows": int(len(orders_v0)),
+            "final_rows": int(len(orders_v3)),
+            "new_orders": int(len(orders_v3) - len(orders_v0)),
+        }, f, indent=2)
 
 if __name__ == "__main__":
     main()

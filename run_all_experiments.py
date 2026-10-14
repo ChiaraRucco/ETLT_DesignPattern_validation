@@ -8,6 +8,8 @@ import subprocess
 from pathlib import Path
 import json
 from datetime import datetime
+import platform
+import shutil
 
 def run_experiment(script_name, description):
     """Run a single experiment script"""
@@ -40,7 +42,8 @@ def generate_final_report():
     result_files = {
         'data_quality': 'results/data_quality_results.json',
         'performance': 'results/performance_results.json',
-        'cost': 'results/cost_analysis_results.json'
+        'cost': 'results/cost_analysis_results.json',
+        'time_travel': 'results/time_travel_results.json',
     }
     
     for key, filepath in result_files.items():
@@ -61,19 +64,24 @@ def generate_final_report():
     if 'data_quality' in results:
         dq = results['data_quality']
         orders_results = dq.get('orders', [])
+        cleaned_results = dq.get('orders_clean', [])
         passed = sum(1 for r in orders_results if r.get('passed', False))
         total = len(orders_results)
-        report_lines.append(f"✓ Data Contract Validations: {passed}/{total} passed")
-        report_lines.append(f"✓ Great Expectations integration successful")
-        report_lines.append(f"✓ Automated quality checks at L1→L2 boundary")
+        cleaned_passed = sum(1 for r in cleaned_results if r.get('passed', False))
+        report_lines.append(f"Initial raw-data contract rules passed: {passed}/{total}")
+        report_lines.append(f"Post-cleaning contract rules passed: {cleaned_passed}/{len(cleaned_results)}")
+        report_lines.append(
+            f"Rows promoted from L1 to L2: {dq['summary']['l2_rows']}/{dq['summary']['l1_rows']} "
+            f"({dq['summary']['quality_rate']:.2f}%)"
+        )
     
     # 2. Time Travel & Versioning
     report_lines.append("\n2. TIME TRAVEL & VERSIONING")
     report_lines.append("-" * 80)
-    report_lines.append(f"✓ Delta Lake versioning enabled")
-    report_lines.append(f"✓ Multiple versions created and validated")
-    report_lines.append(f"✓ Time travel queries successful")
-    report_lines.append(f"✓ Rollback capability demonstrated")
+    if 'time_travel' in results:
+        tt = results['time_travel']
+        report_lines.append(f"Delta-table versions created: {tt['history_versions']}")
+        report_lines.append(f"Rows added in the versioning scenario: {tt['new_orders']}")
     
     # 3. Query Performance
     report_lines.append("\n3. QUERY PERFORMANCE")
@@ -88,7 +96,10 @@ def generate_final_report():
             improvement = (1 - (sum(sem_times) / len(sem_times)) / (sum(raw_times) / len(raw_times))) * 100
             report_lines.append(f"✓ Average Query Speedup: {avg_speedup:.2f}x")
             report_lines.append(f"✓ Performance Improvement: {improvement:.1f}%")
-            report_lines.append(f"✓ Semantic Layer (L2) consistently faster than Raw (L1)")
+            faster = sum(semantic < raw for raw, semantic in zip(raw_times, sem_times))
+            report_lines.append(
+                f"✓ Semantic Layer (L2) was faster in {faster}/{len(raw_times)} benchmark queries"
+            )
     
     # 4. Cost Analysis
     report_lines.append("\n4. COST ANALYSIS")
@@ -103,11 +114,10 @@ def generate_final_report():
     # 5. Overall Conclusions
     report_lines.append("\n5. VALIDATION CONCLUSIONS")
     report_lines.append("-" * 80)
-    report_lines.append("✓ Data Quality: Enforced via Great Expectations contracts")
-    report_lines.append("✓ Versioning: Full time travel & rollback capabilities validated")
-    report_lines.append("✓ Performance: Semantic layer provides significant speedup")
-    report_lines.append("✓ Cost: Tiered storage reduces total cost of ownership")
-    report_lines.append("\n✓ ELTL++ pattern successfully validated across all dimensions")
+    report_lines.append("Data quality: raw-input failures and post-cleaning results are reported above")
+    report_lines.append("Versioning: the generated Delta-table history is reported above")
+    report_lines.append("Performance: measurements are workload- and hardware-specific")
+    report_lines.append("Cost: estimates depend on the stated pricing and access assumptions")
     
     report_lines.append("\n" + "=" * 80)
     
@@ -126,14 +136,17 @@ def main():
     print("=" * 80)
     print("\nThis suite will run all validation experiments:")
     print("  1. Data Generation (TPC-H-like dataset)")
-    print("  2. Data Quality & Contracts (Great Expectations)")
-    print("  3. Time Travel & Versioning (Delta Lake)")
-    print("  4. Query Performance (Raw vs Semantic)")
-    print("  5. Cost Analysis (Storage & Compute)")
-    print("\nEstimated runtime: ~15 minutes")
+    print("  2. Data Quality & Contracts (executable validation rules)")
+    print("  3. Query Performance (Raw vs Semantic)")
+    print("  4. Cost Analysis (Storage & Compute)")
+    print("  5. Time Travel & Versioning (Delta Lake)")
+    print("\nReference runtime: under one minute on the documented local environment")
     print("=" * 80)
     
-    input("\nPress Enter to start...")
+    # Start from generated data on every run so stale Delta-table versions cannot
+    # change the result. Generated data and results are intentionally untracked.
+    shutil.rmtree("data", ignore_errors=True)
+    Path("data").mkdir(exist_ok=True)
     
     # Create results directory
     Path("results").mkdir(exist_ok=True)
@@ -142,9 +155,9 @@ def main():
     experiments = [
         ("1_data_generation.py", "Data Generation"),
         ("2_data_quality.py", "Data Quality & Contracts"),
-        ("3_time_travel.py", "Time Travel & Versioning"),
         ("4_performance.py", "Query Performance"),
         ("5_cost_analysis.py", "Cost Analysis"),
+        ("3_time_travel.py", "Time Travel & Versioning"),
     ]
     
     success_count = 0
@@ -156,6 +169,14 @@ def main():
     
     # Generate final report
     generate_final_report()
+
+    environment = {
+        "python": sys.version,
+        "platform": platform.platform(),
+        "generated_at": datetime.now().isoformat(),
+    }
+    with open("results/environment.json", "w") as f:
+        json.dump(environment, f, indent=2)
     
     # Summary
     print("\n" + "=" * 80)

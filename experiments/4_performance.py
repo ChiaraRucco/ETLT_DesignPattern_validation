@@ -5,6 +5,7 @@ Compares query performance between normalized raw tables and denormalized semant
 
 import pandas as pd
 import time
+import statistics
 from deltalake import DeltaTable
 import duckdb
 from tabulate import tabulate
@@ -85,9 +86,9 @@ def benchmark_query(name, query_func, iterations=30):
     result = None
     
     for i in range(iterations):
-        start = time.time()
+        start = time.perf_counter()
         result = query_func()
-        elapsed = time.time() - start
+        elapsed = time.perf_counter() - start
         times.append(elapsed)
     
     times_sorted = sorted(times)
@@ -96,7 +97,7 @@ def benchmark_query(name, query_func, iterations=30):
         'query': name,
         'iterations': iterations,
         'mean': sum(times) / len(times),
-        'median': times_sorted[len(times) // 2],
+        'median': statistics.median(times),
         'p95': times_sorted[int(len(times) * 0.95)],
         'p99': times_sorted[int(len(times) * 0.99)],
         'min': min(times),
@@ -250,6 +251,10 @@ def run_performance_tests():
     for query_name, query_raw, query_semantic in queries:
         print(f"\nBenchmarking: {query_name}")
         print("  Testing raw L1...")
+        # Warm each query once. This prevents one-off planning/allocation work from
+        # being reported as query execution time.
+        query_raw()
+        query_semantic()
         result_raw = benchmark_query(f"{query_name} (Raw L1)", query_raw, iterations=30)
         print(f"    Median: {result_raw['median']*1000:.2f}ms")
         

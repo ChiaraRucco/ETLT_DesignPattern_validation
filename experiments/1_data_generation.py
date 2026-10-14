@@ -7,12 +7,17 @@ import pandas as pd
 from faker import Faker
 from datetime import datetime, timedelta
 import random
+import numpy as np
 import os
 from pathlib import Path
 
 # Set seeds for reproducibility
 Faker.seed(42)
 random.seed(42)
+np.random.seed(42)
+
+# A fixed reference date makes the generated data and benchmark filter stable.
+REFERENCE_DATE = datetime(2025, 1, 1)
 
 fake = Faker()
 
@@ -47,7 +52,7 @@ def generate_orders(customers, n=100000):
     - 65% older than 365 days (archive tier)
     """
     print(f"Generating {n} orders...")
-    now = datetime.now()
+    now = REFERENCE_DATE
     
     orders = []
     for i in range(1, n+1):
@@ -78,28 +83,26 @@ def generate_orders(customers, n=100000):
 def generate_lineitems(orders, products, avg_items=3):
     """Generate order line items"""
     print(f"Generating line items (avg {avg_items} per order)...")
-    lineitems = []
-    lineitem_id = 1
-    
-    for _, order in orders.iterrows():
-        n_items = random.randint(1, avg_items * 2)
-        for _ in range(n_items):
-            product = products.sample(1).iloc[0]
-            quantity = random.randint(1, 10)
-            discount = round(random.uniform(0, 0.3), 2)
-            
-            lineitems.append({
-                'lineitem_id': lineitem_id,
-                'order_id': order['order_id'],
-                'product_id': product['product_id'],
-                'quantity': quantity,
-                'price': product['unit_price'],
-                'discount': discount,
-                'line_total': round(quantity * product['unit_price'] * (1 - discount), 2)
-            })
-            lineitem_id += 1
-    
-    return pd.DataFrame(lineitems)
+    # Vectorization keeps the reference workload large while making generation
+    # practical and deterministic. Calling DataFrame.sample once per line item
+    # made execution time depend heavily on pandas internals.
+    item_counts = np.random.randint(1, avg_items * 2 + 1, size=len(orders))
+    order_ids = np.repeat(orders['order_id'].to_numpy(), item_counts)
+    product_rows = np.random.randint(0, len(products), size=len(order_ids))
+    selected_products = products.iloc[product_rows].reset_index(drop=True)
+    quantity = np.random.randint(1, 11, size=len(order_ids))
+    discount = np.round(np.random.uniform(0, 0.3, size=len(order_ids)), 2)
+    price = selected_products['unit_price'].to_numpy()
+
+    return pd.DataFrame({
+        'lineitem_id': np.arange(1, len(order_ids) + 1),
+        'order_id': order_ids,
+        'product_id': selected_products['product_id'].to_numpy(),
+        'quantity': quantity,
+        'price': price,
+        'discount': discount,
+        'line_total': np.round(quantity * price * (1 - discount), 2),
+    })
 
 def introduce_quality_issues(df, issue_rate=0.05):
     """
