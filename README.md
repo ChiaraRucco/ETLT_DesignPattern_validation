@@ -11,6 +11,7 @@ This package validates ELTL++ with focus on:
 
 **Prerequisites:**
 Use Python 3.11 and the exact package versions in `requirements.txt`.
+PyArrow is pinned because the Delta writer uses pandas' Arrow interchange.
 
 **Reference runtime:** under one minute on the documented local environment.
 **Cost:** < $0 (runs locally with DuckDB + local Delta Lake)
@@ -81,9 +82,15 @@ results/
 
 ✅ **Data Quality:** executable schema and quality-rule validation
 ✅ **Time Travel:** Delta Lake versioning with full history
+✅ **Rollback:** restores a selected prior Delta version and verifies the current table data
 ✅ **Performance:** a controlled Raw L1 versus Semantic L2 comparison
 ✅ **Cost:** a transparent, parameterized tiered-storage model
 ✅ **Reproducibility:** a pinned, end-to-end local validation workflow
 
 This package provides a reproducible implementation artifact. The generated
 measurements are limited to its stated workload and local execution environment.
+
+The cost-analysis script is a separate illustrative scenario using West Europe
+price inputs documented as December 2024. It does not generate the East US
+scenario in the companion manuscript's cost table, which uses prices retrieved
+on 29 October 2026.

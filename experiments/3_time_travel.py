@@ -139,25 +139,30 @@ def demonstrate_rollback():
     print("Rollback Demonstration")
     print("=" * 60)
     
-    dt = DeltaTable("data/raw_l1/orders")
-    current_version = len(dt.history()) - 1
-    
+    table_path = "data/raw_l1/orders"
+    dt = DeltaTable(table_path)
+    current_version = dt.version()
+    target_version = 1
+
     print(f"\nCurrent version: {current_version}")
-    print("  Rolling back to version 1...")
-    
-    # Load version 1
-    try:
-        dt_v1 = DeltaTable("data/raw_l1/orders", version=1)
-        df_v1 = dt_v1.to_pandas()
-        
-        # Write as new version (this is the "rollback")
-        write_deltalake("data/raw_l1/orders", df_v1, mode='overwrite')
-        
-        print(f"  ✓ Rolled back successfully")
-        print(f"  New version: {len(DeltaTable('data/raw_l1/orders').history())}")
-        
-    except Exception as e:
-        print(f"  ✗ Rollback failed: {str(e)}")
+    print(f"  Restoring version {target_version}...")
+
+    expected = DeltaTable(table_path, version=target_version).to_pandas()
+    dt.restore(target_version)
+
+    restored_table = DeltaTable(table_path)
+    restored = restored_table.to_pandas()
+    if not restored.equals(expected):
+        raise RuntimeError(f"Restored table does not match version {target_version}")
+
+    print(f"  ✓ Restored and verified version {target_version}")
+    print(f"  New current version: {restored_table.version()}")
+    return {
+        "target_version": target_version,
+        "restored_version": restored_table.version(),
+        "restored_rows": len(restored),
+        "matches_target": True,
+    }
 
 def main():
     print("=" * 60)
@@ -170,8 +175,9 @@ def main():
     # Demonstrate time travel
     history = demonstrate_time_travel()
     
-    # Demonstrate rollback
-    # demonstrate_rollback()  # Commented out to preserve versions
+    # Restore after recording the pre-restore history so the time-travel
+    # summary remains a record of the update scenario.
+    rollback = demonstrate_rollback()
     
     # Summary
     print("\n" + "=" * 60)
@@ -179,8 +185,9 @@ def main():
     print("=" * 60)
     print(f"Total versions created: {len(history)}")
     print(f"Version 0 (Initial): {len(orders_v0):,} orders")
-    print(f"Version 3 (Current): {len(orders_v3):,} orders")
+    print(f"Version 3 (Before restore): {len(orders_v3):,} orders")
     print(f"Growth: +{len(orders_v3) - len(orders_v0):,} orders")
+    print(f"Rollback verified: version {rollback['target_version']} restored")
     print("\n✓ Time travel and versioning capabilities validated")
     print("=" * 60)
 
@@ -191,6 +198,7 @@ def main():
             "initial_rows": int(len(orders_v0)),
             "final_rows": int(len(orders_v3)),
             "new_orders": int(len(orders_v3) - len(orders_v0)),
+            "rollback": rollback,
         }, f, indent=2)
 
 if __name__ == "__main__":
