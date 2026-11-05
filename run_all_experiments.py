@@ -82,6 +82,13 @@ def generate_final_report():
         tt = results['time_travel']
         report_lines.append(f"Delta-table versions created: {tt['history_versions']}")
         report_lines.append(f"Rows added in the versioning scenario: {tt['new_orders']}")
+        rollback = tt.get('rollback')
+        if rollback:
+            report_lines.append(
+                f"Restore to version {rollback['target_version']} verified: "
+                f"{rollback['matches_target']} "
+                f"(current version {rollback['restored_version']})"
+            )
     
     # 3. Query Performance
     report_lines.append("\n3. QUERY PERFORMANCE")

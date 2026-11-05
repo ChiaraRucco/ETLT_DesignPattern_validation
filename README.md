@@ -87,3 +87,8 @@ results/
 
 This package provides a reproducible implementation artifact. The generated
 measurements are limited to its stated workload and local execution environment.
+
+The cost-analysis script is a separate illustrative scenario using West Europe
+price inputs documented as December 2024. It does not generate the East US
+scenario in the companion manuscript's cost table, which uses prices retrieved
+on 29 October 2026.
