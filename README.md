@@ -81,6 +81,7 @@ results/
 
 ✅ **Data Quality:** executable schema and quality-rule validation
 ✅ **Time Travel:** Delta Lake versioning with full history
+✅ **Rollback:** restores a selected prior Delta version and verifies the current table data
 ✅ **Performance:** a controlled Raw L1 versus Semantic L2 comparison
 ✅ **Cost:** a transparent, parameterized tiered-storage model
 ✅ **Reproducibility:** a pinned, end-to-end local validation workflow
