@@ -11,6 +11,7 @@ This package validates ELTL++ with focus on:
 
 **Prerequisites:**
 Use Python 3.11 and the exact package versions in `requirements.txt`.
+PyArrow is pinned because the Delta writer uses pandas' Arrow interchange.
 
 **Reference runtime:** under one minute on the documented local environment.
 **Cost:** < $0 (runs locally with DuckDB + local Delta Lake)
